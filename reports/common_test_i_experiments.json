@@ -1,0 +1,18 @@
+[
+  {
+    "report": "common_test_i_fft.json",
+    "family": "handcrafted",
+    "model": "fft_radial_logreg",
+    "val_accuracy": 0.3867,
+    "val_macro_roc_auc": 0.5587,
+    "selection_note": "Best recorded Common Test I baseline in this repository."
+  },
+  {
+    "report": "common_test_i_hog.json",
+    "family": "handcrafted",
+    "model": "hog_logreg",
+    "val_accuracy": 0.3680,
+    "val_macro_roc_auc": 0.5317,
+    "selection_note": "Secondary structured-feature baseline kept for comparison."
+  }
+]

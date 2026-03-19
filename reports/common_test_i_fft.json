@@ -1,0 +1,13 @@
+{
+  "config": {
+    "data_root": "data/common-test-i",
+    "train_per_class": 1000,
+    "val_per_class": 300,
+    "bins": 32,
+    "feature_type": "fft_radial"
+  },
+  "validation": {
+    "accuracy": 0.38666666666666666,
+    "macro_roc_auc": 0.5587185185185186
+  }
+}

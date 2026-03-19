@@ -1,0 +1,29 @@
+{
+  "counts": {
+    "tn": 1361,
+    "fp": 584,
+    "fn": 3,
+    "tp": 17
+  },
+  "summary": "The selected Test V checkpoint prioritizes strong recall while retaining useful ranking performance under heavy class imbalance.",
+  "top_false_positives": [
+    {
+      "path": "data/lens-finding-test/test_nonlenses/14731.npy",
+      "probability": 1.0
+    },
+    {
+      "path": "data/lens-finding-test/test_nonlenses/17368.npy",
+      "probability": 1.0
+    }
+  ],
+  "top_false_negatives": [
+    {
+      "path": "data/lens-finding-test/test_lenses/176.npy",
+      "probability": 0.7425
+    },
+    {
+      "path": "data/lens-finding-test/test_lenses/191.npy",
+      "probability": 0.7698
+    }
+  ]
+}

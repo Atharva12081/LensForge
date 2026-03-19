@@ -1,0 +1,143 @@
+# LSST Pipeline Workflow
+
+This note covers the project-description side of the DeepLense "Data Processing Pipeline for the LSST" task and maps directly to the runnable code in `src/lsst_pipeline/` and `run_lsst_mock_pipeline.py`.
+
+## Goal
+
+Build a practical workflow that connects Rubin/LSST-style data access tools to DeepLense downstream tasks such as:
+
+- lens finding
+- classification
+- super-resolution
+
+## Implemented workflow
+
+1. Discover data products.
+Use a query stage to identify candidate objects and stable identifiers.
+
+2. Retrieve science-ready inputs.
+Fetch the calibrated image planes and associated metadata needed for a target task.
+
+3. Build task-specific cutouts.
+Convert larger survey images into per-object tensors or cutouts centered on candidate systems.
+
+4. Standardize representation.
+Normalize filters, align channels, record provenance, and convert data into the tensor layout expected by DeepLense models.
+
+5. Export reproducible artifacts.
+Save model-ready arrays plus metadata manifests so downstream experiments can be rerun and audited.
+
+## Implemented components
+
+### 1. `query`
+
+Responsibility:
+- query mock-survey tables or local survey-like folders
+- filter to a bounded reproducible subset for testing
+
+Inputs:
+- data root
+- optional per-folder cap
+
+Outputs:
+- a table of candidate objects with stable identifiers
+
+Current implementation:
+- `src/lsst_pipeline/query.py`
+
+### 2. `fetch`
+
+Responsibility:
+- retrieve calibrated images and ancillary metadata for selected objects
+- cache raw results locally to avoid repeated network access
+
+Inputs:
+- object identifiers from the query stage
+- desired bands / filters
+
+Outputs:
+- raw downloaded image files
+- metadata sidecars
+
+Current implementation:
+- `src/lsst_pipeline/fetch.py`
+
+### 3. `cutout`
+
+Responsibility:
+- create fixed-size image cutouts around each object
+- align multi-band inputs into a consistent channel stack
+
+Inputs:
+- calibrated survey images
+- object coordinates and cutout sizes
+
+Outputs:
+- per-object image tensors
+
+Current implementation:
+- `src/lsst_pipeline/cutout.py`
+
+### 4. `preprocess`
+
+Responsibility:
+- normalize flux ranges
+- clip invalid pixels
+- resize or pad to model input sizes
+- convert arrays into the target DeepLense tensor schema
+
+Outputs:
+- model-ready arrays such as `(C, H, W)`
+- preprocessing metadata for reproducibility
+
+Current implementation:
+- `src/lsst_pipeline/preprocess.py`
+
+### 5. `package`
+
+Responsibility:
+- split data into train / validation / test sets
+- write manifests and labels
+- expose a stable folder format for DeepLense experiments
+
+Outputs:
+- dataset directory
+- manifest JSON / CSV
+- provenance report
+
+Current implementation:
+- `src/lsst_pipeline/package.py`
+- `src/lsst_pipeline/pipeline.py`
+- `run_lsst_mock_pipeline.py`
+
+## Mock-survey validation plan
+
+The project description explicitly mentions testing on Rubin mock surveys. LensForge now includes a local mock-survey adapter over the Test V dataset so the same pipeline stages can be executed and verified end to end without depending on external services.
+
+Validation path used in this repository:
+
+1. run the pipeline on a small mock-survey subset
+2. verify that object ids, band ordering, and cutout geometry are consistent
+3. export a packaged dataset in DeepLense format
+4. feed that packaged output into a downstream lens-finding or classification baseline
+5. confirm that the entire path from query to model input is reproducible
+
+## How this connects to LensForge
+
+LensForge currently implements the downstream model side for:
+
+- Common Test I multi-class classification
+- Test V lens finding
+
+The LSST pipeline layer would sit upstream of those models and produce the standardized arrays they consume.
+
+## Current repository artifact
+
+The repository now contains:
+
+- runnable pipeline code in `src/lsst_pipeline/`
+- a CLI runner in `run_lsst_mock_pipeline.py`
+- a notebook in `output/jupyter-notebook/lsst-mock-pipeline.ipynb`
+- a compact run summary in `reports/lsst_mock_pipeline_summary.md`
+
+If Rubin/LSST APIs are available later, the `query` and `fetch` stages are the only places that need real service adapters. The downstream cutout, preprocess, package, and model handoff logic can stay the same.

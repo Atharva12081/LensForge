@@ -1,0 +1,8 @@
+{
+  "summary": "The mock LSST-style packaging workflow successfully produced DeepLense-ready folders and passed them into the Test V trainer in an end-to-end smoke run.",
+  "test": {
+    "roc_auc": 0.71875,
+    "pr_auc": 0.6138281549447882,
+    "recall": 1.0
+  }
+}

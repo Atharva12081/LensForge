@@ -1,0 +1,25 @@
+{
+  "pipeline_name": "mock_lsst_to_deeplense",
+  "data_root": "data/lens-finding-test",
+  "output_root": "/Users/atharva/Desktop/GSoC Poposel 3/LensForge/tmp/lsst_mock_pipeline",
+  "max_per_folder": 16,
+  "cutout_size": 64,
+  "num_records": 64,
+  "split_counts": {
+    "train": 32,
+    "test": 32
+  },
+  "class_counts": {
+    "train_lenses": 16,
+    "test_lenses": 16,
+    "train_nonlenses": 16,
+    "test_nonlenses": 16
+  },
+  "stages": [
+    "query",
+    "fetch",
+    "cutout",
+    "preprocess",
+    "package"
+  ]
+}

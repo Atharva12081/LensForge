@@ -1,0 +1,14 @@
+{
+  "selected_default": "bce",
+  "decision": "BCE remains the default for LensForge because it preserved stronger recall and overall ranking quality on the evaluated Test V slice.",
+  "bce": {
+    "test_roc_auc": 0.8828,
+    "test_pr_auc": 0.0969,
+    "test_recall": 0.85
+  },
+  "focal": {
+    "test_roc_auc": 0.8641,
+    "test_pr_auc": 0.0457,
+    "test_recall": 0.6
+  }
+}

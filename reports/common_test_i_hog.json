@@ -1,0 +1,12 @@
+{
+  "config": {
+    "data_root": "data/common-test-i",
+    "train_per_class": 800,
+    "val_per_class": 250,
+    "feature_type": "hog"
+  },
+  "validation": {
+    "accuracy": 0.368,
+    "macro_roc_auc": 0.5316666666666666
+  }
+}
