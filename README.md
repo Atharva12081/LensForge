@@ -1,12 +1,55 @@
-# LensForge
+# LensForge: Lens Finding & Data Pipelines
 
 LensForge is a self-contained GitHub submission for the GSoC 2026 DeepLense "Lens Finding & Data Pipelines" evaluation.
+
+[![CI](https://github.com/Atharva12081/LensForge/actions/workflows/ci.yml/badge.svg)](https://github.com/Atharva12081/LensForge/actions/workflows/ci.yml)
+![Python](https://img.shields.io/badge/Python-3.11.9-blue.svg)
+![License](https://img.shields.io/badge/License-MIT-green.svg)
+![Install](https://img.shields.io/badge/install-pip%20install%20-r%20requirements.txt-2ea44f)
 
 This repository includes:
 
 - the required Common Test I multi-class classification deliverable
 - the project-specific Test V lens-finding deliverable
 - a runnable mock LSST-style data pipeline that feeds downstream DeepLense workflows
+
+## Reviewer Quickstart
+
+This repository implements the DeepLense GSoC 2026 evaluation submission for:
+
+- Common Test I
+- Test V: Lens Finding & Data Pipelines
+- a mock LSST-style upstream data pipeline
+
+### 1. Install dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+### 2. Review the main deliverables
+
+Open:
+
+```text
+output/jupyter-notebook/deeplense-test-v-baseline.ipynb
+output/jupyter-notebook/common-test-i-multiclass.ipynb
+output/jupyter-notebook/lsst-mock-pipeline.ipynb
+```
+
+### 3. Run the main lens-finding baseline
+
+```bash
+python train.py --data-root data/lens-finding-test --epochs 5 --batch-size 128 --balance-strategy both
+```
+
+### 4. Inspect the saved evaluation summaries
+
+```text
+reports/best_current_run.json
+reports/common_test_i_experiments_compact.md
+reports/lsst_mock_pipeline_summary.md
+```
 
 ## Evaluation Scope
 
@@ -41,7 +84,66 @@ Each sample is a normalized NumPy array with shape `(3, 64, 64)`.
 - `train_common_test_i_fft.py`: FFT radial-feature baseline for Common Test I
 - `train_common_test_i_hog.py`: HOG-feature baseline for Common Test I
 
-## Quick start
+## Pipeline Overview
+
+Common Test I images
+  |
+  v
+Multi-class baselines
+  |
+  v
+Validation ROC/AUC
+
+Test V survey cutouts
+  |
+  v
+Imbalance-aware CNN
+  |
+  v
+Threshold tuning
+  |
+  v
+ROC / PR / error analysis
+
+Mock LSST-style packaging
+  |
+  v
+DeepLense-ready dataset layout
+  |
+  v
+Downstream lens-finding smoke validation
+
+## Key Features
+
+- End-to-end Test V baseline with class-imbalance handling, threshold tuning, and saved evaluation reports.
+- Common Test I coverage with retained reference baselines and notebook documentation.
+- Runnable mock LSST-style pipeline that packages survey-like inputs into downstream DeepLense format.
+- Reproducible repository layout with curated artifacts, notebooks, and review notes.
+- GitHub Actions smoke checks for repository integrity.
+
+## Repository Layout
+
+```text
+LensForge/
+├── src/
+│   ├── lsst_pipeline/
+│   ├── common_test_i.py
+│   └── lens_finding_baseline.py
+├── output/jupyter-notebook/
+├── reports/
+├── docs/
+├── tests/
+├── models/
+├── data/
+├── train.py
+├── train_common_test_i.py
+├── run_lsst_mock_pipeline.py
+├── pyproject.toml
+├── requirements.txt
+└── environment.yml
+```
+
+## Quickstart
 
 Install dependencies with:
 
@@ -76,6 +178,13 @@ Use `--test-fraction < 1.0` for quicker iteration during development, then switc
 - Common Test I best recorded run:
   - validation accuracy: `0.3867`
   - validation macro ROC-AUC: `0.5587`
+
+Artifact sources:
+
+- `reports/best_current_run.json`
+- `reports/common_test_i_fft.json`
+- `reports/common_test_i_hog.json`
+- `reports/lsst_mock_pipeline_run.json`
 
 ## Mock LSST pipeline
 
@@ -128,6 +237,13 @@ data/common-test-i/
 - Save validation and test ROC/PR curve data into the run report for notebook visualization.
 - Save the main Test V checkpoint to `models/best_current_run.pt`.
 
+## Reproducibility
+
+- Python version is pinned in `.python-version` and `environment.yml`.
+- Core reviewer-facing artifacts are committed in the repository.
+- Notebook files are validated by repository smoke tests.
+- The repository includes a lightweight CI workflow for structural verification.
+
 ## Current status
 
 - Common Test I is implemented with multiple baseline families and a dedicated notebook.
@@ -144,3 +260,13 @@ If you are evaluating the repository quickly, the recommended order is:
 3. `output/jupyter-notebook/deeplense-test-v-baseline.ipynb`
 4. `output/jupyter-notebook/common-test-i-multiclass.ipynb`
 5. `output/jupyter-notebook/lsst-mock-pipeline.ipynb`
+
+## Development and Tests
+
+```bash
+pytest -q
+```
+
+## License
+
+This project is licensed under the MIT License. See `LICENSE`.

@@ -1,0 +1,27 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  smoke-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install test dependency
+        run: python -m pip install pytest
+
+      - name: Byte-compile entry points
+        run: |
+          python -m py_compile train.py train_common_test_i.py train_common_test_i_fft.py train_common_test_i_hog.py train_common_test_i_radial.py run_lsst_mock_pipeline.py
+
+      - name: Run repository smoke tests
+        run: pytest -q
