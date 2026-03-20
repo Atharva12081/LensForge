@@ -5,7 +5,7 @@ LensForge is a self-contained GitHub submission for the GSoC 2026 DeepLense "Len
 [![CI](https://github.com/Atharva12081/LensForge/actions/workflows/ci.yml/badge.svg)](https://github.com/Atharva12081/LensForge/actions/workflows/ci.yml)
 ![Python](https://img.shields.io/badge/Python-3.11.9-blue.svg)
 ![License](https://img.shields.io/badge/License-MIT-green.svg)
-![Install](https://img.shields.io/badge/install-pip%20install%20-r%20requirements.txt-2ea44f)
+![Install](https://img.shields.io/static/v1?label=install&message=pip%20install%20-r%20requirements.txt&color=2ea44f)
 
 This repository includes:
 
