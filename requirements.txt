@@ -1,4 +1,5 @@
 matplotlib
+nbformat
 numpy
 pandas
 scikit-image
