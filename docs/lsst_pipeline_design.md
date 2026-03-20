@@ -141,3 +141,21 @@ The repository now contains:
 - a compact run summary in `reports/lsst_mock_pipeline_summary.md`
 
 If Rubin/LSST APIs are available later, the `query` and `fetch` stages are the only places that need real service adapters. The downstream cutout, preprocess, package, and model handoff logic can stay the same.
+
+## Mock-to-real adapter path
+
+LensForge now separates the two upstream Rubin-facing responsibilities clearly:
+
+- `query` should map to Rubin TAP discovery against `ivoa.ObsCore`, using the
+  same `get_tap_service("tap")` access pattern documented in the DP0.2
+  tutorials.
+- `fetch` should map to Butler-backed dataset discovery and retrieval, using
+  `Butler("dp02", collections="2.2i/runs/DP0.2")` plus
+  `query_datasets("calexp", ...)` in a Rubin notebook environment where the
+  repository index aliases are defined.
+
+The reviewer-facing notebook
+`output/jupyter-notebook/rubin-dp02-access.ipynb` exists to make that boundary
+concrete. It does not attempt a full end-to-end replacement of the mock
+pipeline. Instead, it demonstrates the exact external service entry points that
+the future real `query` and `fetch` adapters should wrap.

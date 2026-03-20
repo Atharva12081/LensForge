@@ -12,6 +12,7 @@ This repository includes:
 - the required Common Test I multi-class classification deliverable
 - the project-specific Test V lens-finding deliverable
 - a runnable mock LSST-style data pipeline that feeds downstream DeepLense workflows
+- a prepared Rubin DP0.2 access notebook with confirmed TAP endpoint reachability and the real TAP/Butler adapter shape
 
 ## Reviewer Quickstart
 
@@ -35,7 +36,14 @@ Open:
 output/jupyter-notebook/deeplense-test-v-baseline.ipynb
 output/jupyter-notebook/common-test-i-multiclass.ipynb
 output/jupyter-notebook/lsst-mock-pipeline.ipynb
+output/jupyter-notebook/rubin-dp02-access.ipynb
 ```
+
+The Rubin notebook is a prepared live-access artifact: the local TAP client has
+already been verified to reach `data.lsst.cloud` up to the expected
+authentication boundary, and the notebook is ready to run a real DP0.2 TAP
+discovery query as soon as a Rubin access token is available. It also
+demonstrates the Butler discovery shape inside a Rubin notebook environment.
 
 ### 3. Run the main lens-finding baseline
 
@@ -71,6 +79,7 @@ Each sample is a normalized NumPy array with shape `(3, 64, 64)`.
 - `src/lsst_pipeline/`: runnable mock Rubin/LSST-style query, fetch, cutout, preprocess, and package stages
 - `run_lsst_mock_pipeline.py`: entry point for packaging mock-survey inputs into DeepLense-ready folders
 - `output/jupyter-notebook/lsst-mock-pipeline.ipynb`: notebook showing the LSST-style packaging workflow
+- `output/jupyter-notebook/rubin-dp02-access.ipynb`: notebook for live DP0.2 TAP discovery and Butler-side adapter shape
 - `docs/lsst_pipeline_design.md`: implementation note for the data-pipeline side of the project brief
 - `docs/gsoc26_evaluation_checklist.md`: requirement-to-artifact checklist for the GSoC 2026 evaluation
 - `docs/submission_notes.md`: quick guide for mentor review
@@ -215,6 +224,9 @@ data/lens-finding-test/
 ```
 
 with the four class folders under it.
+The benchmark arrays themselves are not committed in this repository, so a fresh
+clone will need those folders populated locally before the full Test V training
+or mock-pipeline commands can reproduce the saved reports.
 
 Keep the Common Test I dataset inside the repository at:
 
@@ -227,6 +239,9 @@ data/common-test-i/
   val/sphere
   val/vort
 ```
+
+As with Test V, the committed repository keeps the reports and notebook
+artifacts, not the raw challenge arrays.
 
 ## Baseline strategy
 
@@ -266,6 +281,10 @@ If you are evaluating the repository quickly, the recommended order is:
 ```bash
 pytest -q
 ```
+
+The test suite uses lightweight synthetic arrays to smoke-test the training
+CLIs, notebook structure, and the LSST-style packaging pipeline without
+requiring the full benchmark datasets in `data/`.
 
 ## License
 
