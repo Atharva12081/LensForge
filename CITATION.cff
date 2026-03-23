@@ -1,0 +1,16 @@
+cff-version: 1.2.0
+title: "LensForge"
+message: "If you use this repository or build on its evaluation pipeline, please cite it as software."
+type: software
+authors:
+  - family-names: "Parande"
+    given-names: "Atharva"
+repository-code: "https://github.com/Atharva12081/LensForge"
+url: "https://github.com/Atharva12081/LensForge"
+license: MIT
+version: "0.1.0"
+date-released: 2026-03-24
+abstract: >-
+  LensForge is a GSoC 2026 DeepLense evaluation submission covering Common Test I,
+  Test V lens finding, and a mock Rubin/LSST-style data pipeline with reviewer-facing
+  notebooks, reports, and reproducibility checks.

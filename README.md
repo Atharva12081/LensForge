@@ -7,12 +7,19 @@ LensForge is a self-contained GitHub submission for the GSoC 2026 DeepLense "Len
 ![License](https://img.shields.io/badge/License-MIT-green.svg)
 ![Install](https://img.shields.io/static/v1?label=install&message=pip%20install%20-r%20requirements.txt&color=2ea44f)
 
+LensForge is built to answer the DeepLense evaluation in a reviewer-friendly way:
+
+- Common Test I is implemented and documented
+- Test V is implemented with the strongest retained modeling result in the repository
+- the LSST side is represented by both a runnable mock pipeline and a prepared Rubin DP0.2 access path
+
 This repository includes:
 
 - the required Common Test I multi-class classification deliverable
 - the project-specific Test V lens-finding deliverable
 - a runnable mock LSST-style data pipeline that feeds downstream DeepLense workflows
 - a prepared Rubin DP0.2 access notebook with confirmed TAP endpoint reachability and the real TAP/Butler adapter shape
+- an optional Test IV neural-operator extension built on the Common Test I dataset
 
 ## Reviewer Quickstart
 
@@ -37,6 +44,7 @@ output/jupyter-notebook/deeplense-test-v-baseline.ipynb
 output/jupyter-notebook/common-test-i-multiclass.ipynb
 output/jupyter-notebook/lsst-mock-pipeline.ipynb
 output/jupyter-notebook/rubin-dp02-access.ipynb
+output/jupyter-notebook/test-iv-neural-operator.ipynb
 ```
 
 The Rubin notebook is a prepared live-access artifact: the local TAP client has
@@ -54,10 +62,19 @@ python train.py --data-root data/lens-finding-test --epochs 5 --batch-size 128 -
 ### 4. Inspect the saved evaluation summaries
 
 ```text
+reports/LENSFORGE_REPORT.md
 reports/best_current_run.json
 reports/common_test_i_experiments_compact.md
 reports/lsst_mock_pipeline_summary.md
 ```
+
+## Executive Summary
+
+LensForge combines three layers of evidence in one repository:
+
+1. evaluation notebooks and saved metrics for the required DeepLense tasks
+2. a stronger Test V implementation with imbalance-aware training and threshold tuning
+3. a credible Rubin/LSST pipeline story, from mock packaging today to TAP/Butler access when the proper environment is available
 
 ## Evaluation Scope
 
@@ -80,15 +97,19 @@ Each sample is a normalized NumPy array with shape `(3, 64, 64)`.
 - `run_lsst_mock_pipeline.py`: entry point for packaging mock-survey inputs into DeepLense-ready folders
 - `output/jupyter-notebook/lsst-mock-pipeline.ipynb`: notebook showing the LSST-style packaging workflow
 - `output/jupyter-notebook/rubin-dp02-access.ipynb`: notebook for live DP0.2 TAP discovery and Butler-side adapter shape
+- `docs/rubin_access_setup.md`: setup notes for the optional Rubin DP0.2 access path
 - `docs/lsst_pipeline_design.md`: implementation note for the data-pipeline side of the project brief
+- `docs/source_synthesis.md`: source-backed mapping from LSST docs and linked papers to repository design choices
 - `docs/gsoc26_evaluation_checklist.md`: requirement-to-artifact checklist for the GSoC 2026 evaluation
 - `docs/submission_notes.md`: quick guide for mentor review
 - `LICENSE`: MIT license
 - `requirements.txt`: Python dependency list
 - `reports/`: curated experiment summaries and key JSON metrics
+- `reports/LENSFORGE_REPORT.md`: consolidated reviewer-grade summary of the full submission
 - `reports/lsst_mock_pipeline_summary.md`: compact end-to-end summary of the pipeline handoff into Test V
 - `reports/focal_loss_summary.md`: direct BCE vs focal-loss comparison notes
 - `train_common_test_i.py`: multiclass baseline trainer for Common Test I
+- `train_test_iv_neural_operator.py`: optional Test IV neural-operator runner on the Common Test I dataset
 - `train_common_test_i_radial.py`: handcrafted radial-feature baseline for Common Test I
 - `train_common_test_i_fft.py`: FFT radial-feature baseline for Common Test I
 - `train_common_test_i_hog.py`: HOG-feature baseline for Common Test I
@@ -122,11 +143,25 @@ DeepLense-ready dataset layout
   v
 Downstream lens-finding smoke validation
 
+```mermaid
+flowchart TD
+    A["Common Test I dataset"] --> B["retained baseline comparison"]
+    C["Test V images"] --> D["imbalance-aware CNN"]
+    D --> E["threshold tuning"]
+    E --> F["ROC / PR / error analysis"]
+    G["Mock Rubin / LSST inputs"] --> H["query -> fetch -> cutout -> preprocess -> package"]
+    H --> I["DeepLense-ready dataset layout"]
+    I --> D
+```
+
 ## Key Features
 
 - End-to-end Test V baseline with class-imbalance handling, threshold tuning, and saved evaluation reports.
 - Common Test I coverage with retained reference baselines and notebook documentation.
+- Optional Test IV spectral / neural-operator baseline tied directly to the task-folder extension path.
 - Runnable mock LSST-style pipeline that packages survey-like inputs into downstream DeepLense format.
+- LSST-native provenance concepts such as dataset type, collection, band set, and task-adapter metadata in the packaged pipeline output.
+- Explicit source alignment to the linked LSST documentation and DeepLense morphology papers.
 - Reproducible repository layout with curated artifacts, notebooks, and review notes.
 - GitHub Actions smoke checks for repository integrity.
 
@@ -185,14 +220,20 @@ Use `--test-fraction < 1.0` for quicker iteration during development, then switc
   - test PR-AUC: `0.0969`
   - test recall: `0.85`
 - Common Test I best recorded run:
-  - validation accuracy: `0.3867`
-  - validation macro ROC-AUC: `0.5587`
+  - validation accuracy: `0.6144`
+  - validation macro ROC-AUC: `0.8333`
+  - setup: explicit stratified `90:10` validation split with the polar-view CNN and no augmentation
+- Optional Test IV spectral baseline:
+  - validation accuracy: `0.3333`
+  - validation macro ROC-AUC: `0.5245`
 
 Artifact sources:
 
+- `reports/LENSFORGE_REPORT.md`
 - `reports/best_current_run.json`
-- `reports/common_test_i_fft.json`
-- `reports/common_test_i_hog.json`
+- `reports/common_test_i_polar_9010_noaug_long.json`
+- `reports/common_test_i_experiments_compact.md`
+- `reports/test_iv_spectral.json`
 - `reports/lsst_mock_pipeline_run.json`
 
 ## Mock LSST pipeline
@@ -272,9 +313,10 @@ If you are evaluating the repository quickly, the recommended order is:
 
 1. `docs/submission_notes.md`
 2. `docs/gsoc26_evaluation_checklist.md`
-3. `output/jupyter-notebook/deeplense-test-v-baseline.ipynb`
-4. `output/jupyter-notebook/common-test-i-multiclass.ipynb`
-5. `output/jupyter-notebook/lsst-mock-pipeline.ipynb`
+3. `reports/LENSFORGE_REPORT.md`
+4. `output/jupyter-notebook/deeplense-test-v-baseline.ipynb`
+5. `output/jupyter-notebook/common-test-i-multiclass.ipynb`
+6. `output/jupyter-notebook/lsst-mock-pipeline.ipynb`
 
 ## Development and Tests
 

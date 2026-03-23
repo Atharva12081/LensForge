@@ -1,11 +1,43 @@
 [
   {
+    "report": "common_test_i_polar_9010_noaug_long.json",
+    "family": "neural",
+    "model": "polar_cnn_9010_noaug_long",
+    "val_accuracy": 0.6144,
+    "val_macro_roc_auc": 0.8333,
+    "selection_note": "Best recorded Common Test I baseline in this repository."
+  },
+  {
+    "report": "common_test_i_polar_9010.json",
+    "family": "neural",
+    "model": "polar_cnn_9010",
+    "val_accuracy": 0.5143,
+    "val_macro_roc_auc": 0.7560,
+    "selection_note": "Earlier strong 90:10 polar baseline retained for comparison."
+  },
+  {
+    "report": "common_test_i_polar_9010_noaug.json",
+    "family": "neural",
+    "model": "polar_cnn_9010_noaug",
+    "val_accuracy": 0.5013,
+    "val_macro_roc_auc": 0.7522,
+    "selection_note": "Strong secondary 90:10 validation run kept for comparison."
+  },
+  {
+    "report": "common_test_i_polar.json",
+    "family": "neural",
+    "model": "polar_cnn",
+    "val_accuracy": 0.4150,
+    "val_macro_roc_auc": 0.7209,
+    "selection_note": "Earlier retained polar baseline on the provided train/val split."
+  },
+  {
     "report": "common_test_i_fft.json",
     "family": "handcrafted",
     "model": "fft_radial_logreg",
     "val_accuracy": 0.3867,
     "val_macro_roc_auc": 0.5587,
-    "selection_note": "Best recorded Common Test I baseline in this repository."
+    "selection_note": "Retained handcrafted comparison floor."
   },
   {
     "report": "common_test_i_hog.json",

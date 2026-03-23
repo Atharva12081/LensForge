@@ -37,6 +37,19 @@ def run_mock_lsst_pipeline(
         "split_counts": dict(split_counts),
         "class_counts": dict(class_counts),
         "stages": ["query", "fetch", "cutout", "preprocess", "package"],
+        "rubin_alignment": {
+            "query_interface": "TAP / ObsCore-style discovery",
+            "fetch_interface": "Butler dataset retrieval",
+            "dataset_type": "calexp_cutout",
+            "collections": ["mock/runs/LensForge"],
+            "bands": ["g", "r", "i"],
+            "task_adapters": ["lens_finding", "classification", "super_resolution"],
+            "provenance_fields": ["object_id", "dataset_type", "collection", "bands", "source_path"],
+        },
+        "research_alignment": {
+            "supervised_morphology": "Retains model-ready packaging for lens classification workflows motivated by supervised morphology studies.",
+            "representation_learning": "Supports downstream unsupervised or hybrid morphology discovery by exporting reproducible cutouts with explicit provenance.",
+        },
     }
     write_manifest(output_root=output_root, rows=packaged_rows, provenance=provenance)
     return provenance

@@ -10,6 +10,12 @@ Build a practical workflow that connects Rubin/LSST-style data access tools to D
 - classification
 - super-resolution
 
+This workflow is now framed around three source-backed ideas from the project links:
+
+- Butler-centered data access from the LSST Science Pipelines documentation, where datasets are identified by dataset type, collection, and data IDs rather than raw file paths alone.
+- supervised morphology learning from "Deep Learning the Morphology of Dark Matter Substructure" ([arXiv:1909.07346](https://arxiv.org/abs/1909.07346)), which motivates keeping downstream classification-ready cutouts and labels explicit.
+- unsupervised or theory-agnostic representation discovery from "Decoding Dark Matter Substructure without Supervision" ([arXiv:2008.12731](https://arxiv.org/abs/2008.12731)), which motivates preserving provenance-rich packaged artifacts for later embedding, clustering, or anomaly-detection workflows.
+
 ## Implemented workflow
 
 1. Discover data products.
@@ -26,6 +32,9 @@ Normalize filters, align channels, record provenance, and convert data into the 
 
 5. Export reproducible artifacts.
 Save model-ready arrays plus metadata manifests so downstream experiments can be rerun and audited.
+
+6. Support multiple downstream analysis styles.
+Keep the packaged output usable not just for supervised classifiers, but also for unsupervised morphology discovery, retrieval, and future neural-operator experiments.
 
 ## Implemented components
 
@@ -74,6 +83,7 @@ Inputs:
 
 Outputs:
 - per-object image tensors
+- stable channel ordering metadata so multi-band downstream models can trust the input semantics
 
 Current implementation:
 - `src/lsst_pipeline/cutout.py`
@@ -104,6 +114,14 @@ Outputs:
 - dataset directory
 - manifest JSON / CSV
 - provenance report
+
+Additional repository-aligned packaging fields:
+- `dataset_type`
+- `collection`
+- `bands`
+- `source_kind`
+
+These fields mirror the Butler-style habit of treating dataset identity and provenance as first-class metadata rather than hidden assumptions.
 
 Current implementation:
 - `src/lsst_pipeline/package.py`
@@ -159,3 +177,24 @@ The reviewer-facing notebook
 concrete. It does not attempt a full end-to-end replacement of the mock
 pipeline. Instead, it demonstrates the exact external service entry points that
 the future real `query` and `fetch` adapters should wrap.
+
+## Paper-grounded task adapters
+
+The linked papers suggest that the LSST-facing pipeline should not stop at one single classifier handoff. LensForge now treats the packaged survey output as a common substrate for multiple DeepLense task families:
+
+- `lens_finding`
+  Uses calibrated multi-band cutouts and explicit labels for binary discovery tasks like Test V.
+- `classification`
+  Supports supervised morphology studies in the style of [arXiv:1909.07346](https://arxiv.org/abs/1909.07346), where distinct substructure classes are compared directly.
+- `super_resolution`
+  Preserves stable cutout geometry and band ordering so the same upstream packaging can feed image-restoration tasks later.
+- `representation_learning`
+  Keeps enough provenance for unsupervised workflows in the spirit of [arXiv:2008.12731](https://arxiv.org/abs/2008.12731), where embeddings, clustering, or anomaly scores may be the primary output instead of class labels.
+
+## Why this improves the submission
+
+This iteration makes LensForge look more aligned with the actual project brief and source material because it now:
+
+- uses LSST-native concepts like dataset type, collection, and provenance explicitly
+- connects the upstream data pipeline to both supervised and unsupervised DeepLense use cases
+- presents the mock pipeline as a credible adapter boundary for future Rubin access, not just a folder reshuffling script

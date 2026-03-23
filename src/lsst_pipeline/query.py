@@ -19,6 +19,10 @@ class SurveyObject:
     class_name: str
     label: int
     source_path: Path
+    source_kind: str = "mock_survey"
+    dataset_type: str = "calexp_cutout"
+    collection: str = "mock/runs/LensForge"
+    bands: tuple[str, ...] = ("g", "r", "i")
 
 
 def query_mock_survey(data_root: Path, max_per_folder: int | None = None) -> list[SurveyObject]:

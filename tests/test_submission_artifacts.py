@@ -20,13 +20,17 @@ def test_core_artifacts_exist() -> None:
         ROOT / "requirements.txt",
         ROOT / "docs" / "submission_notes.md",
         ROOT / "docs" / "gsoc26_evaluation_checklist.md",
+        ROOT / "docs" / "source_synthesis.md",
         ROOT / "output" / "jupyter-notebook" / "common-test-i-multiclass.ipynb",
         ROOT / "output" / "jupyter-notebook" / "deeplense-test-v-baseline.ipynb",
         ROOT / "output" / "jupyter-notebook" / "lsst-mock-pipeline.ipynb",
         ROOT / "output" / "jupyter-notebook" / "rubin-dp02-access.ipynb",
+        ROOT / "output" / "jupyter-notebook" / "test-iv-neural-operator.ipynb",
         ROOT / "reports" / "best_current_run.json",
         ROOT / "reports" / "common_test_i_fft.json",
+        ROOT / "reports" / "common_test_i_polar_9010_noaug_long.json",
         ROOT / "reports" / "lsst_mock_pipeline_run.json",
+        ROOT / "reports" / "test_iv_spectral.json",
     ]
     for path in required_paths:
         assert path.exists(), f"Missing required artifact: {path}"

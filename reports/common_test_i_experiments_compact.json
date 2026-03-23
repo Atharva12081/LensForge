@@ -1,79 +1,30 @@
 [
   {
-    "report": "common_test_i_fft.json",
-    "family": "handcrafted",
-    "model": "fft_radial_logreg",
-    "val_accuracy": 0.38666666666666666,
-    "val_macro_roc_auc": 0.5587185185185186
-  },
-  {
-    "report": "common_test_i_smoke.json",
+    "report": "common_test_i_polar_9010_noaug_long.json",
     "family": "neural",
-    "model": "conv",
-    "val_accuracy": 0.36,
-    "val_macro_roc_auc": 0.5540906666666666
+    "model": "polar_cnn_9010_noaug_long",
+    "val_accuracy": 0.6144,
+    "val_macro_roc_auc": 0.8333329066666666
   },
   {
-    "report": "common_test_i_overfit_probe.json",
+    "report": "common_test_i_polar_9010.json",
     "family": "neural",
-    "model": "conv",
-    "val_accuracy": 0.3333333333333333,
-    "val_macro_roc_auc": 0.5437333333333333
+    "model": "polar_cnn_9010",
+    "val_accuracy": 0.5143333333333333,
+    "val_macro_roc_auc": 0.7559600833333334
   },
   {
-    "report": "common_test_i_crop_probe.json",
+    "report": "common_test_i_polar_9010_noaug.json",
     "family": "neural",
-    "model": "conv",
-    "val_accuracy": 0.3333333333333333,
-    "val_macro_roc_auc": 0.5394666666666666
+    "model": "polar_cnn_9010_noaug",
+    "val_accuracy": 0.5013333333333333,
+    "val_macro_roc_auc": 0.7522163333333333
   },
   {
-    "report": "common_test_i_hog.json",
-    "family": "handcrafted",
-    "model": "hog_logreg",
-    "val_accuracy": 0.368,
-    "val_macro_roc_auc": 0.5316666666666666
-  },
-  {
-    "report": "common_test_i_radial.json",
-    "family": "handcrafted",
-    "model": "radial_logreg",
-    "val_accuracy": 0.3488888888888889,
-    "val_macro_roc_auc": 0.5304833333333333
-  },
-  {
-    "report": "common_test_i_reg_v2.json",
+    "report": "common_test_i_polar.json",
     "family": "neural",
-    "model": "conv",
-    "val_accuracy": 0.3333333333333333,
-    "val_macro_roc_auc": 0.5183873333333334
-  },
-  {
-    "report": "common_test_i_pooled_v1.json",
-    "family": "neural",
-    "model": "conv",
-    "val_accuracy": 0.342,
-    "val_macro_roc_auc": 0.5116923333333333
-  },
-  {
-    "report": "common_test_i_residual_v1.json",
-    "family": "neural",
-    "model": "residual",
-    "val_accuracy": 0.3293333333333333,
-    "val_macro_roc_auc": 0.5098946666666667
-  },
-  {
-    "report": "common_test_i_resize_probe.json",
-    "family": "neural",
-    "model": "conv",
-    "val_accuracy": 0.3333333333333333,
-    "val_macro_roc_auc": 0.5017333333333334
-  },
-  {
-    "report": "common_test_i_norm_probe.json",
-    "family": "neural",
-    "model": "conv",
-    "val_accuracy": 0.32,
-    "val_macro_roc_auc": 0.496
+    "model": "polar_cnn",
+    "val_accuracy": 0.415,
+    "val_macro_roc_auc": 0.7209166666666667
   }
 ]

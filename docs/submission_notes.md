@@ -6,7 +6,8 @@ This repository is organized as a mentor-facing GSoC 2026 DeepLense evaluation s
 
 1. Open `README.md` for the high-level overview.
 2. Open `docs/gsoc26_evaluation_checklist.md` for a requirement-to-artifact map.
-3. Review the notebooks in `output/jupyter-notebook/`.
+3. Open `reports/LENSFORGE_REPORT.md` for the consolidated technical summary.
+4. Review the notebooks in `output/jupyter-notebook/`.
 
 ## Primary Artifacts
 
@@ -14,6 +15,10 @@ This repository is organized as a mentor-facing GSoC 2026 DeepLense evaluation s
   - `output/jupyter-notebook/common-test-i-multiclass.ipynb`
   - `train_common_test_i.py`
   - `reports/common_test_i_experiments_compact.md`
+- Optional Test IV extension:
+  - `output/jupyter-notebook/test-iv-neural-operator.ipynb`
+  - `train_test_iv_neural_operator.py`
+  - `reports/test_iv_spectral.json`
 - Test V:
   - `output/jupyter-notebook/deeplense-test-v-baseline.ipynb`
   - `train.py`
@@ -24,6 +29,8 @@ This repository is organized as a mentor-facing GSoC 2026 DeepLense evaluation s
   - `run_lsst_mock_pipeline.py`
   - `docs/lsst_pipeline_design.md`
   - `reports/lsst_mock_pipeline_summary.md`
+- Consolidated summary:
+  - `reports/LENSFORGE_REPORT.md`
 
 ## Current Best Recorded Results
 
@@ -34,8 +41,12 @@ This repository is organized as a mentor-facing GSoC 2026 DeepLense evaluation s
   - test PR-AUC: `0.0969`
   - test recall: `0.85`
 - Common Test I:
-  - best recorded validation accuracy: `0.3867`
-  - best recorded validation macro ROC-AUC: `0.5587`
+  - best recorded validation accuracy: `0.6144`
+  - best recorded validation macro ROC-AUC: `0.8333`
+  - strongest retained run uses an explicit stratified `90:10` validation split with the polar-view CNN and no augmentation
+- Optional Test IV spectral baseline:
+  - validation accuracy: `0.3333`
+  - validation macro ROC-AUC: `0.5245`
 
 ## Scope Note
 

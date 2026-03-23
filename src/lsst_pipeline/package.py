@@ -29,6 +29,10 @@ def package_processed_sample(
         "split": record.split,
         "class_name": record.class_name,
         "label": record.label,
+        "source_kind": record.source_kind,
+        "dataset_type": record.dataset_type,
+        "collection": record.collection,
+        "bands": list(record.bands),
         "source_path": str(record.source_path),
         "packaged_path": str(destination),
         "shape": list(array.shape),
@@ -43,7 +47,19 @@ def write_manifest(output_root: Path, rows: list[dict[str, object]], provenance:
     with manifest_csv.open("w", newline="") as handle:
         writer = csv.DictWriter(
             handle,
-            fieldnames=["object_id", "split", "class_name", "label", "source_path", "packaged_path", "shape"],
+            fieldnames=[
+                "object_id",
+                "split",
+                "class_name",
+                "label",
+                "source_kind",
+                "dataset_type",
+                "collection",
+                "bands",
+                "source_path",
+                "packaged_path",
+                "shape",
+            ],
         )
         writer.writeheader()
         writer.writerows(rows)

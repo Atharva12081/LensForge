@@ -1,0 +1,100 @@
+{
+  "config": {
+    "data_root": "/Users/atharva/Desktop/GSoC Poposel 3/Task/Training Data/common test dataset",
+    "epochs": 5,
+    "batch_size": 24,
+    "lr": 0.001,
+    "weight_decay": 0.0001,
+    "model_type": "polar",
+    "train_fraction": 0.08,
+    "val_fraction": 1.0,
+    "validation_fraction": 0.1,
+    "input_pool": 1,
+    "width": 24,
+    "center_crop": 0,
+    "resize_to": 0,
+    "normalize_mode": "per_image_standardize",
+    "view_mode": "polar",
+    "polar_radius": 72,
+    "polar_height": 80,
+    "polar_width": 96,
+    "label_smoothing": 0.03,
+    "disable_augment": false,
+    "num_workers": 0,
+    "seed": 42,
+    "device": "cpu",
+    "model_path": "models/common_test_i_polar_9010_best.pt"
+  },
+  "history": [
+    {
+      "epoch": 1,
+      "train": {
+        "loss": 1.103661909368303,
+        "accuracy": 0.33935185185185185,
+        "macro_roc_auc": 0.5007291666666668
+      },
+      "validation": {
+        "loss": 1.0998629517555236,
+        "accuracy": 0.33766666666666667,
+        "macro_roc_auc": 0.5397635833333333
+      }
+    },
+    {
+      "epoch": 2,
+      "train": {
+        "loss": 1.0979893578423394,
+        "accuracy": 0.35648148148148145,
+        "macro_roc_auc": 0.5220630787037037
+      },
+      "validation": {
+        "loss": 1.099030041217804,
+        "accuracy": 0.35,
+        "macro_roc_auc": 0.56982275
+      }
+    },
+    {
+      "epoch": 3,
+      "train": {
+        "loss": 1.0341799789004855,
+        "accuracy": 0.46111111111111114,
+        "macro_roc_auc": 0.649883616255144
+      },
+      "validation": {
+        "loss": 1.020494823694229,
+        "accuracy": 0.457,
+        "macro_roc_auc": 0.7514641666666666
+      }
+    },
+    {
+      "epoch": 4,
+      "train": {
+        "loss": 0.9425887737009261,
+        "accuracy": 0.5083333333333333,
+        "macro_roc_auc": 0.7213618827160494
+      },
+      "validation": {
+        "loss": 0.95241048848629,
+        "accuracy": 0.5143333333333333,
+        "macro_roc_auc": 0.7559600833333334
+      }
+    },
+    {
+      "epoch": 5,
+      "train": {
+        "loss": 0.9025519556469388,
+        "accuracy": 0.5305555555555556,
+        "macro_roc_auc": 0.7452533436213992
+      },
+      "validation": {
+        "loss": 2.189862898349762,
+        "accuracy": 0.3273333333333333,
+        "macro_roc_auc": 0.6268973333333333
+      }
+    }
+  ],
+  "best_validation": {
+    "loss": 0.95241048848629,
+    "accuracy": 0.5143333333333333,
+    "macro_roc_auc": 0.7559600833333334
+  }
+}

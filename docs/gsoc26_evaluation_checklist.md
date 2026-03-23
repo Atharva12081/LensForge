@@ -37,6 +37,18 @@ Covered by:
 - `reports/focal_loss_summary.md`
 - `reports/error_summary.md`
 
+## Optional Test IV: Neural Operators
+
+Opportunity from task folder:
+- completing an additional specific test may improve consideration across DeepLense tracks
+- Test IV asks for a neural-operator-style classifier on the Common Test I dataset
+
+Covered by:
+- `train_test_iv_neural_operator.py`
+- `train_common_test_i.py --model-type spectral`
+- `output/jupyter-notebook/test-iv-neural-operator.ipynb`
+- `reports/test_iv_spectral.json`
+
 ## Jupyter Notebooks
 
 Requirement:
@@ -55,6 +67,7 @@ Requirement:
 Covered by:
 - `train.py` with `--validation-fraction 0.1`
 - `train_common_test_i.py` using the provided `train/val` structure
+- `train_common_test_i.py --validation-fraction 0.1` for an explicit stratified 90:10 split when desired
 - saved validation metrics in `reports/*.json`
 - notebook visualizations in both task notebooks
 

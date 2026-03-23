@@ -10,12 +10,16 @@ from torch.utils.data import DataLoader
 from src.common_test_i import (
     CommonTestIDataset,
     MultiClassConvNet,
+    PolarClassifier,
+    ResNet18Classifier,
     ResidualClassifier,
+    SpectralClassifier,
     list_multiclass_files,
     maybe_limit_items,
     run_epoch,
     save_report,
     set_seed,
+    stratified_split_items,
 )
 
 
@@ -26,14 +30,28 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--batch-size", type=int, default=64)
     parser.add_argument("--lr", type=float, default=1e-3)
     parser.add_argument("--weight-decay", type=float, default=1e-4)
-    parser.add_argument("--model-type", choices=["conv", "residual"], default="conv")
+    parser.add_argument(
+        "--model-type",
+        choices=["conv", "residual", "polar", "spectral", "resnet18"],
+        default="conv",
+    )
     parser.add_argument("--train-fraction", type=float, default=1.0)
     parser.add_argument("--val-fraction", type=float, default=1.0)
+    parser.add_argument("--validation-fraction", type=float, default=0.0)
+    parser.add_argument("--combine-train-and-val", action="store_true")
     parser.add_argument("--input-pool", type=int, default=1)
     parser.add_argument("--width", type=int, default=16)
     parser.add_argument("--center-crop", type=int, default=0)
     parser.add_argument("--resize-to", type=int, default=0)
     parser.add_argument("--normalize-mode", choices=["none", "per_image_standardize"], default="none")
+    parser.add_argument("--view-mode", choices=["image", "polar"], default="image")
+    parser.add_argument("--polar-radius", type=int, default=72)
+    parser.add_argument("--polar-height", type=int, default=80)
+    parser.add_argument("--polar-width", type=int, default=96)
+    parser.add_argument("--cache-dir", type=Path, default=None)
+    parser.add_argument("--label-smoothing", type=float, default=0.0)
+    parser.add_argument("--scheduler", choices=["none", "cosine"], default="none")
+    parser.add_argument("--warmup-epochs", type=int, default=0)
     parser.add_argument("--disable-augment", action="store_true")
     parser.add_argument("--num-workers", type=int, default=0)
     parser.add_argument("--seed", type=int, default=42)
@@ -51,8 +69,20 @@ def main() -> None:
     set_seed(args.seed)
     device = torch.device(args.device)
 
-    train_items = maybe_limit_items(list_multiclass_files(args.data_root, "train"), args.train_fraction, args.seed)
-    val_items = maybe_limit_items(list_multiclass_files(args.data_root, "val"), args.val_fraction, args.seed)
+    full_train_items = list_multiclass_files(args.data_root, "train")
+    if args.combine_train_and_val:
+        full_train_items = full_train_items + list_multiclass_files(args.data_root, "val")
+    if args.validation_fraction > 0.0:
+        split_train_items, split_val_items = stratified_split_items(
+            full_train_items,
+            validation_fraction=args.validation_fraction,
+            seed=args.seed,
+        )
+        train_items = maybe_limit_items(split_train_items, args.train_fraction, args.seed)
+        val_items = maybe_limit_items(split_val_items, args.val_fraction, args.seed)
+    else:
+        train_items = maybe_limit_items(full_train_items, args.train_fraction, args.seed)
+        val_items = maybe_limit_items(list_multiclass_files(args.data_root, "val"), args.val_fraction, args.seed)
 
     train_loader = DataLoader(
         CommonTestIDataset(
@@ -61,6 +91,11 @@ def main() -> None:
             center_crop=args.center_crop if args.center_crop > 0 else None,
             resize_to=args.resize_to if args.resize_to > 0 else None,
             normalize_mode=args.normalize_mode,
+            view_mode=args.view_mode,
+            polar_radius=args.polar_radius,
+            polar_height=args.polar_height,
+            polar_width=args.polar_width,
+            cache_dir=args.cache_dir,
         ),
         batch_size=args.batch_size,
         shuffle=True,
@@ -74,6 +109,11 @@ def main() -> None:
             center_crop=args.center_crop if args.center_crop > 0 else None,
             resize_to=args.resize_to if args.resize_to > 0 else None,
             normalize_mode=args.normalize_mode,
+            view_mode=args.view_mode,
+            polar_radius=args.polar_radius,
+            polar_height=args.polar_height,
+            polar_width=args.polar_width,
+            cache_dir=args.cache_dir,
         ),
         batch_size=args.batch_size,
         shuffle=False,
@@ -81,12 +121,44 @@ def main() -> None:
         pin_memory=torch.cuda.is_available(),
     )
 
-    if args.model_type == "residual":
+    if args.model_type == "spectral":
+        model = SpectralClassifier(width=max(args.width, 24)).to(device)
+    elif args.model_type == "resnet18":
+        model = ResNet18Classifier().to(device)
+    elif args.model_type == "polar":
+        model = PolarClassifier(width=max(args.width, 24)).to(device)
+    elif args.model_type == "residual":
         model = ResidualClassifier(width=args.width).to(device)
     else:
         model = MultiClassConvNet(input_pool=args.input_pool, width=args.width).to(device)
-    criterion = nn.CrossEntropyLoss()
+    criterion = nn.CrossEntropyLoss(label_smoothing=args.label_smoothing)
     optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
+    scheduler = None
+    if args.scheduler == "cosine":
+        if args.warmup_epochs > 0:
+            warmup = torch.optim.lr_scheduler.LinearLR(
+                optimizer,
+                start_factor=0.1,
+                end_factor=1.0,
+                total_iters=args.warmup_epochs,
+            )
+            cosine_epochs = max(args.epochs - args.warmup_epochs, 1)
+            cosine = torch.optim.lr_scheduler.CosineAnnealingLR(
+                optimizer,
+                T_max=cosine_epochs,
+                eta_min=1e-6,
+            )
+            scheduler = torch.optim.lr_scheduler.SequentialLR(
+                optimizer,
+                schedulers=[warmup, cosine],
+                milestones=[args.warmup_epochs],
+            )
+        else:
+            scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+                optimizer,
+                T_max=max(args.epochs, 1),
+                eta_min=1e-6,
+            )
 
     best_val_auc = float("-inf")
     best_val_metrics = None
@@ -108,17 +180,21 @@ def main() -> None:
                     "accuracy": val_metrics.accuracy,
                     "macro_roc_auc": val_metrics.macro_roc_auc,
                 },
+                "lr": optimizer.param_groups[0]["lr"],
             }
         )
         print(
             f"epoch={epoch} "
             f"train_loss={train_metrics.loss:.4f} train_acc={train_metrics.accuracy:.4f} train_auc={train_metrics.macro_roc_auc:.4f} "
-            f"val_loss={val_metrics.loss:.4f} val_acc={val_metrics.accuracy:.4f} val_auc={val_metrics.macro_roc_auc:.4f}"
+            f"val_loss={val_metrics.loss:.4f} val_acc={val_metrics.accuracy:.4f} val_auc={val_metrics.macro_roc_auc:.4f} "
+            f"lr={optimizer.param_groups[0]['lr']:.2e}"
         )
         if val_metrics.macro_roc_auc > best_val_auc:
             best_val_auc = val_metrics.macro_roc_auc
             best_val_metrics = val_metrics
             torch.save(model.state_dict(), args.model_path)
+        if scheduler is not None:
+            scheduler.step()
 
     if best_val_metrics is None:
         raise RuntimeError("No validation metrics recorded.")
@@ -134,11 +210,21 @@ def main() -> None:
             "model_type": args.model_type,
             "train_fraction": args.train_fraction,
             "val_fraction": args.val_fraction,
+            "validation_fraction": args.validation_fraction,
+            "combine_train_and_val": args.combine_train_and_val,
             "input_pool": args.input_pool,
             "width": args.width,
             "center_crop": args.center_crop,
             "resize_to": args.resize_to,
             "normalize_mode": args.normalize_mode,
+            "view_mode": args.view_mode,
+            "polar_radius": args.polar_radius,
+            "polar_height": args.polar_height,
+            "polar_width": args.polar_width,
+            "cache_dir": str(args.cache_dir) if args.cache_dir is not None else None,
+            "label_smoothing": args.label_smoothing,
+            "scheduler": args.scheduler,
+            "warmup_epochs": args.warmup_epochs,
             "disable_augment": args.disable_augment,
             "num_workers": args.num_workers,
             "seed": args.seed,
