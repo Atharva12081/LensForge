@@ -153,6 +153,8 @@ flowchart TD
     G["Mock Rubin / LSST inputs"] --> H["query -> fetch -> cutout -> preprocess -> package"]
     H --> I["DeepLense-ready dataset layout"]
     I --> D
+    J --> K["LensForge submission artifacts"]
+    F --> K
 ```
 
 ## Key Features
