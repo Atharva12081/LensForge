@@ -146,6 +146,7 @@ Downstream lens-finding smoke validation
 ```mermaid
 flowchart TD
     A["Common Test I dataset"] --> B["retained baseline comparison"]
+    B --> J["Common Test I metrics / notebook"]
     C["Test V images"] --> D["imbalance-aware CNN"]
     D --> E["threshold tuning"]
     E --> F["ROC / PR / error analysis"]
