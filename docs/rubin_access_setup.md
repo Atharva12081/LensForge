@@ -25,4 +25,4 @@ The notebook now fails with explicit, user-friendly messages when:
 
 ## Why this exists
 
-This notebook is the bridge between the current mock LSST-style pipeline in LensForge and a real Rubin-backed implementation. It documents the exact TAP query shape and Butler discovery path the project would use once the proper access environment is available.
+This notebook is the bridge between the current mock LSST-style pipeline in LensForge and a real Rubin-backed implementation. It documents the exact TAP query shape and Butler discovery path the project would use once the proper external access environment is available. It should be read as a prepared live-access path, not as a guarantee that a default local environment can execute Rubin services end to end.

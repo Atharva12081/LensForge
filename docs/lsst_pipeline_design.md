@@ -158,7 +158,7 @@ The repository now contains:
 - a notebook in `output/jupyter-notebook/lsst-mock-pipeline.ipynb`
 - a compact run summary in `reports/lsst_mock_pipeline_summary.md`
 
-If Rubin/LSST APIs are available later, the `query` and `fetch` stages are the only places that need real service adapters. The downstream cutout, preprocess, package, and model handoff logic can stay the same.
+If Rubin/LSST APIs are available later, the `query` and `fetch` stages are the places that need real service adapters plus the appropriate external Rubin environment and credentials. The downstream cutout, preprocess, package, and model handoff logic can stay the same once those upstream dependencies are satisfied.
 
 ## Mock-to-real adapter path
 
@@ -175,8 +175,10 @@ LensForge now separates the two upstream Rubin-facing responsibilities clearly:
 The reviewer-facing notebook
 `output/jupyter-notebook/rubin-dp02-access.ipynb` exists to make that boundary
 concrete. It does not attempt a full end-to-end replacement of the mock
-pipeline. Instead, it demonstrates the exact external service entry points that
-the future real `query` and `fetch` adapters should wrap.
+pipeline, and it should not be interpreted as a self-contained local proof that
+Rubin services are runnable everywhere. Instead, it demonstrates the exact
+external service entry points that the future real `query` and `fetch` adapters
+should wrap once the proper Rubin environment is available.
 
 ## Paper-grounded task adapters
 

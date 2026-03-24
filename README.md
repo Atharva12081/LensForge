@@ -48,10 +48,11 @@ output/jupyter-notebook/test-iv-neural-operator.ipynb
 ```
 
 The Rubin notebook is a prepared live-access artifact: the local TAP client has
-already been verified to reach `data.lsst.cloud` up to the expected
-authentication boundary, and the notebook is ready to run a real DP0.2 TAP
-discovery query as soon as a Rubin access token is available. It also
-demonstrates the Butler discovery shape inside a Rubin notebook environment.
+been checked only up to the expected service/authentication boundary, and live
+DP0.2 execution still depends on Rubin client packages, valid credentials,
+network access, and a Rubin-compatible environment for Butler discovery. The
+notebook documents the real TAP and Butler adapter shape LensForge would use
+once that external environment is available.
 
 ### 3. Run the main lens-finding baseline
 
@@ -74,7 +75,7 @@ LensForge combines three layers of evidence in one repository:
 
 1. evaluation notebooks and saved metrics for the required DeepLense tasks
 2. a stronger Test V implementation with imbalance-aware training and threshold tuning
-3. a credible Rubin/LSST pipeline story, from mock packaging today to TAP/Butler access when the proper environment is available
+3. a credible Rubin/LSST pipeline story, from mock packaging today to prepared TAP/Butler adapter paths when the proper external environment is available
 
 ## Evaluation Scope
 
