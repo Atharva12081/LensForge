@@ -35,11 +35,13 @@ This repository is organized as a mentor-facing GSoC 2026 DeepLense evaluation s
 ## Current Best Recorded Results
 
 - Test V:
-  - validation ROC-AUC: `0.8864`
-  - validation PR-AUC: `0.3121`
-  - test ROC-AUC: `0.8828`
-  - test PR-AUC: `0.0969`
-  - test recall: `0.85`
+  - validation ROC-AUC: `0.9753`
+  - validation PR-AUC: `0.7043`
+  - test ROC-AUC: `0.9659`
+  - test PR-AUC: `0.3795`
+  - test precision: `0.4082`
+  - test recall: `0.5128`
+  - selected baseline uses focal loss with PR-AUC-based model selection
 - Common Test I:
   - best recorded validation accuracy: `0.6144`
   - best recorded validation macro ROC-AUC: `0.8333`

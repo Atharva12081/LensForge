@@ -23,9 +23,17 @@ def set_seed(seed: int) -> None:
 
 
 class LensDataset(Dataset[tuple[Tensor, Tensor]]):
-    def __init__(self, items: list[tuple[Path, int]], augment: bool = False) -> None:
+    def __init__(
+        self,
+        items: list[tuple[Path, int]],
+        augment: bool = False,
+        positive_only_augmentation: bool = False,
+        augmentation_strength: str = "standard",
+    ) -> None:
         self.items = items
         self.augment = augment
+        self.positive_only_augmentation = positive_only_augmentation
+        self.augmentation_strength = augmentation_strength
 
     def __len__(self) -> int:
         return len(self.items)
@@ -34,13 +42,14 @@ class LensDataset(Dataset[tuple[Tensor, Tensor]]):
         path, label = self.items[index]
         image = np.load(path).astype(np.float32)
         tensor = torch.from_numpy(image)
-        if self.augment:
-            tensor = apply_augmentation(tensor)
+        should_augment = self.augment and (not self.positive_only_augmentation or label == 1)
+        if should_augment:
+            tensor = apply_augmentation(tensor, strength=self.augmentation_strength)
         target = torch.tensor(label, dtype=torch.float32)
         return tensor, target
 
 
-def apply_augmentation(image: Tensor) -> Tensor:
+def apply_augmentation(image: Tensor, strength: str = "standard") -> Tensor:
     if torch.rand(1).item() < 0.5:
         image = torch.flip(image, dims=(1,))
     if torch.rand(1).item() < 0.5:
@@ -48,8 +57,25 @@ def apply_augmentation(image: Tensor) -> Tensor:
     if torch.rand(1).item() < 0.5:
         k = int(torch.randint(0, 4, (1,)).item())
         image = torch.rot90(image, k=k, dims=(1, 2))
-    if torch.rand(1).item() < 0.3:
-        noise = torch.randn_like(image) * 0.01
+    translate_prob = 0.3 if strength == "standard" else 0.55
+    brightness_prob = 0.2 if strength == "standard" else 0.45
+    noise_prob = 0.3 if strength == "standard" else 0.45
+    max_shift_fraction = 0.04 if strength == "standard" else 0.08
+    noise_scale = 0.01 if strength == "standard" else 0.02
+    brightness_scale = 0.08 if strength == "standard" else 0.15
+
+    if torch.rand(1).item() < translate_prob:
+        max_shift_y = max(1, int(round(image.shape[1] * max_shift_fraction)))
+        max_shift_x = max(1, int(round(image.shape[2] * max_shift_fraction)))
+        shift_y = int(torch.randint(-max_shift_y, max_shift_y + 1, (1,)).item())
+        shift_x = int(torch.randint(-max_shift_x, max_shift_x + 1, (1,)).item())
+        image = torch.roll(image, shifts=(shift_y, shift_x), dims=(1, 2))
+    if torch.rand(1).item() < brightness_prob:
+        scale = 1.0 + float(torch.empty(1).uniform_(-brightness_scale, brightness_scale).item())
+        bias = float(torch.empty(1).uniform_(-0.5 * brightness_scale, 0.5 * brightness_scale).item())
+        image = torch.clamp(image * scale + bias, 0.0, 1.0)
+    if torch.rand(1).item() < noise_prob:
+        noise = torch.randn_like(image) * noise_scale
         image = torch.clamp(image + noise, 0.0, 1.0)
     return image
 
@@ -106,10 +132,21 @@ def maybe_downsample_items(
     return [items[int(i)] for i in keep_idx]
 
 
-def make_weighted_sampler(items: list[tuple[Path, int]]) -> WeightedRandomSampler:
+def make_weighted_sampler(
+    items: list[tuple[Path, int]],
+    positive_ratio: float = 0.5,
+) -> WeightedRandomSampler:
     labels = np.array([label for _, label in items])
-    class_counts = np.bincount(labels, minlength=2)
-    class_weights = 1.0 / np.maximum(class_counts, 1)
+    class_counts = np.bincount(labels, minlength=2).astype(np.float64)
+    positive_ratio = float(np.clip(positive_ratio, 1e-3, 1.0 - 1e-3))
+    negative_ratio = 1.0 - positive_ratio
+    class_weights = np.array(
+        [
+            negative_ratio / max(class_counts[0], 1.0),
+            positive_ratio / max(class_counts[1], 1.0),
+        ],
+        dtype=np.float64,
+    )
     sample_weights = class_weights[labels]
     return WeightedRandomSampler(
         weights=torch.as_tensor(sample_weights, dtype=torch.double),
@@ -201,6 +238,15 @@ class EpochMetrics:
     threshold: float
 
 
+def apply_temperature_to_logits(logits: np.ndarray, temperature: float) -> np.ndarray:
+    return logits / max(float(temperature), 1e-6)
+
+
+def probabilities_from_logits(logits: np.ndarray, temperature: float = 1.0) -> np.ndarray:
+    calibrated_logits = apply_temperature_to_logits(logits, temperature)
+    return 1.0 / (1.0 + np.exp(-calibrated_logits))
+
+
 def compute_metrics(
     targets: np.ndarray,
     probabilities: np.ndarray,
@@ -237,21 +283,59 @@ def compute_metrics(
     )
 
 
-def find_best_threshold(targets: np.ndarray, probabilities: np.ndarray) -> tuple[float, float]:
+def score_threshold(
+    targets: np.ndarray,
+    probabilities: np.ndarray,
+    threshold: float,
+    beta: float = 1.0,
+) -> float:
+    predictions = (probabilities >= threshold).astype(np.int32)
+    tp = int(((predictions == 1) & (targets == 1)).sum())
+    fp = int(((predictions == 1) & (targets == 0)).sum())
+    fn = int(((predictions == 0) & (targets == 1)).sum())
+    precision = float(tp / max(tp + fp, 1))
+    recall = float(tp / max(tp + fn, 1))
+    beta_sq = beta * beta
+    return float(((1 + beta_sq) * precision * recall) / max(beta_sq * precision + recall, 1e-8))
+
+
+def find_best_threshold(
+    targets: np.ndarray,
+    probabilities: np.ndarray,
+    beta: float = 1.0,
+) -> tuple[float, float]:
     best_threshold = 0.5
-    best_f1 = -1.0
+    best_score = -1.0
     for threshold in np.linspace(0.05, 0.95, 19):
-        predictions = (probabilities >= threshold).astype(np.int32)
-        tp = int(((predictions == 1) & (targets == 1)).sum())
-        fp = int(((predictions == 1) & (targets == 0)).sum())
-        fn = int(((predictions == 0) & (targets == 1)).sum())
-        precision = float(tp / max(tp + fp, 1))
-        recall = float(tp / max(tp + fn, 1))
-        f1 = float((2 * precision * recall) / max(precision + recall, 1e-8))
-        if f1 > best_f1:
-            best_f1 = f1
+        score = score_threshold(targets, probabilities, float(threshold), beta=beta)
+        if score > best_score:
+            best_score = score
             best_threshold = float(threshold)
-    return best_threshold, best_f1
+    return best_threshold, best_score
+
+
+def binary_cross_entropy_from_logits(logits: np.ndarray, targets: np.ndarray) -> float:
+    logits_t = torch.from_numpy(logits.astype(np.float32))
+    targets_t = torch.from_numpy(targets.astype(np.float32))
+    return float(nn.functional.binary_cross_entropy_with_logits(logits_t, targets_t).item())
+
+
+def fit_temperature(
+    logits: np.ndarray,
+    targets: np.ndarray,
+    candidates: np.ndarray | None = None,
+) -> tuple[float, float]:
+    if candidates is None:
+        candidates = np.linspace(0.5, 3.0, 26)
+    best_temperature = 1.0
+    best_loss = binary_cross_entropy_from_logits(logits, targets)
+    for candidate in candidates:
+        scaled_logits = apply_temperature_to_logits(logits, float(candidate))
+        loss = binary_cross_entropy_from_logits(scaled_logits, targets)
+        if loss < best_loss:
+            best_loss = loss
+            best_temperature = float(candidate)
+    return best_temperature, best_loss
 
 
 def run_epoch(
@@ -290,6 +374,39 @@ def run_epoch(
     y_prob = np.concatenate(probabilities).astype(np.float32)
     mean_loss = total_loss / max(total_examples, 1)
     return compute_metrics(y_true, y_prob, mean_loss, threshold=threshold)
+
+
+@torch.no_grad()
+def predict_loader_logits(
+    model: nn.Module,
+    loader: DataLoader[tuple[Tensor, Tensor]],
+    criterion: nn.Module,
+    device: torch.device,
+    threshold: float = 0.5,
+    temperature: float = 1.0,
+) -> tuple[EpochMetrics, np.ndarray, np.ndarray, np.ndarray]:
+    model.eval()
+    total_loss = 0.0
+    total_examples = 0
+    logits_rows: list[np.ndarray] = []
+    targets: list[np.ndarray] = []
+
+    for images, labels in loader:
+        images = images.to(device)
+        labels = labels.to(device)
+        logits = model(images)
+        loss = criterion(logits, labels)
+        batch_size = labels.shape[0]
+        total_loss += loss.item() * batch_size
+        total_examples += batch_size
+        logits_rows.append(logits.cpu().numpy())
+        targets.append(labels.cpu().numpy())
+
+    y_true = np.concatenate(targets).astype(np.int32)
+    y_logits = np.concatenate(logits_rows).astype(np.float32)
+    y_prob = probabilities_from_logits(y_logits, temperature=temperature).astype(np.float32)
+    mean_loss = total_loss / max(total_examples, 1)
+    return compute_metrics(y_true, y_prob, mean_loss, threshold=threshold), y_true, y_prob, y_logits
 
 
 @torch.no_grad()
@@ -332,6 +449,9 @@ def create_data_loaders(
     test_fraction: float,
     num_workers: int,
     balance_strategy: str,
+    positive_only_augmentation: bool,
+    augmentation_strength: str,
+    sampler_positive_ratio: float,
 ) -> tuple[
     DataLoader,
     DataLoader,
@@ -355,9 +475,14 @@ def create_data_loaders(
 
     use_sampler = balance_strategy in {"sampler", "both"}
     train_loader = DataLoader(
-        LensDataset(train_items, augment=True),
+        LensDataset(
+            train_items,
+            augment=True,
+            positive_only_augmentation=positive_only_augmentation,
+            augmentation_strength=augmentation_strength,
+        ),
         batch_size=batch_size,
-        sampler=make_weighted_sampler(train_items) if use_sampler else None,
+        sampler=make_weighted_sampler(train_items, positive_ratio=sampler_positive_ratio) if use_sampler else None,
         shuffle=not use_sampler,
         num_workers=num_workers,
         pin_memory=torch.cuda.is_available(),

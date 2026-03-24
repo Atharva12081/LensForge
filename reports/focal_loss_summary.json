@@ -1,14 +1,17 @@
 {
-  "selected_default": "bce",
-  "decision": "BCE remains the default for LensForge because it preserved stronger recall and overall ranking quality on the evaluated Test V slice.",
+  "selected_default": "focal",
+  "decision": "Focal loss is now the selected Test V baseline in LensForge because it materially improved ranking quality on the full unsampled test set.",
   "bce": {
     "test_roc_auc": 0.8828,
     "test_pr_auc": 0.0969,
     "test_recall": 0.85
   },
   "focal": {
-    "test_roc_auc": 0.8641,
-    "test_pr_auc": 0.0457,
-    "test_recall": 0.6
+    "validation_roc_auc": 0.9753,
+    "validation_pr_auc": 0.7043,
+    "test_roc_auc": 0.9659,
+    "test_pr_auc": 0.3795,
+    "test_precision": 0.4082,
+    "test_recall": 0.5128
   }
 }

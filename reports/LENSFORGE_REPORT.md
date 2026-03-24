@@ -57,11 +57,12 @@ This does not outperform the retained Common Test I polar baseline, but it does 
   - tuned validation threshold
 
 Best retained recorded result:
-- validation ROC-AUC: `0.8864`
-- validation PR-AUC: `0.3121`
-- test ROC-AUC: `0.8828`
-- test PR-AUC: `0.0969`
-- test recall: `0.85`
+- validation ROC-AUC: `0.9753`
+- validation PR-AUC: `0.7043`
+- test ROC-AUC: `0.9659`
+- test PR-AUC: `0.3795`
+- test precision: `0.4082`
+- test recall: `0.5128`
 
 ### LSST / Rubin Pipeline Path
 

@@ -5,18 +5,22 @@ import csv
 import os
 from pathlib import Path
 
+import numpy as np
 import torch
 from torch import nn
 
 from src.lens_finding_baseline import (
+    apply_temperature_to_logits,
     BinaryFocalLoss,
     build_curve_payload,
     build_prediction_rows,
+    compute_metrics,
+    fit_temperature,
     LensClassifier,
     create_data_loaders,
     find_best_threshold,
     metrics_to_dict,
-    predict_loader,
+    predict_loader_logits,
     run_epoch,
     save_training_report,
     set_seed,
@@ -102,6 +106,14 @@ def parse_args() -> argparse.Namespace:
         choices=["none", "sampler", "loss", "both"],
         default="both",
     )
+    parser.add_argument("--positive-only-augmentation", action="store_true")
+    parser.add_argument("--augmentation-strength", choices=["standard", "aggressive"], default="standard")
+    parser.add_argument("--sampler-positive-ratio", type=float, default=0.5)
+    parser.add_argument("--selection-metric", choices=["roc_auc", "pr_auc"], default="pr_auc")
+    parser.add_argument("--threshold-beta", type=float, default=0.5)
+    parser.add_argument("--disable-temperature-scaling", action="store_true")
+    parser.add_argument("--early-stopping-patience", type=int, default=0)
+    parser.add_argument("--early-stopping-min-delta", type=float, default=0.0)
     parser.add_argument("--num-workers", type=int, default=0)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--device", type=str, default="cuda" if torch.cuda.is_available() else "cpu")
@@ -126,6 +138,9 @@ def main() -> None:
         test_fraction=args.test_fraction,
         num_workers=args.num_workers,
         balance_strategy=args.balance_strategy,
+        positive_only_augmentation=args.positive_only_augmentation,
+        augmentation_strength=args.augmentation_strength,
+        sampler_positive_ratio=args.sampler_positive_ratio,
     )
 
     model = LensClassifier().to(device)
@@ -146,18 +161,35 @@ def main() -> None:
     )
 
     best_val_auc = float("-inf")
+    best_selection_score = float("-inf")
     best_val_metrics = None
     best_threshold = 0.5
+    best_temperature = 1.0
+    best_epoch = 0
+    epochs_without_improvement = 0
     history: list[dict[str, object]] = []
 
     for epoch in range(1, args.epochs + 1):
         train_metrics = run_epoch(model, train_loader, criterion, device, optimizer=optimizer)
-        val_metrics_default, val_targets, val_probabilities = predict_loader(
-            model, val_loader, criterion, device, threshold=0.5
+        val_metrics_default, val_targets, val_probabilities, val_logits = predict_loader_logits(
+            model, val_loader, criterion, device, threshold=0.5, temperature=1.0
         )
-        threshold, _ = find_best_threshold(val_targets, val_probabilities)
-        val_metrics_tuned, _, _ = predict_loader(
-            model, val_loader, criterion, device, threshold=threshold
+        if args.disable_temperature_scaling:
+            temperature = 1.0
+            calibration_loss = None
+        else:
+            temperature, calibration_loss = fit_temperature(val_logits, val_targets)
+        calibrated_probabilities = 1.0 / (1.0 + np.exp(-apply_temperature_to_logits(val_logits, temperature)))
+        threshold, threshold_score = find_best_threshold(
+            val_targets,
+            calibrated_probabilities,
+            beta=args.threshold_beta,
+        )
+        val_metrics_tuned = compute_metrics(
+            val_targets,
+            calibrated_probabilities,
+            val_metrics_default.loss,
+            threshold=threshold,
         )
         history.append(
             {
@@ -165,6 +197,10 @@ def main() -> None:
                 "train": metrics_to_dict(train_metrics),
                 "validation": metrics_to_dict(val_metrics_default),
                 "validation_tuned": metrics_to_dict(val_metrics_tuned),
+                "temperature": temperature,
+                "threshold_score": threshold_score,
+                "selection_metric_value": val_metrics_default.pr_auc if args.selection_metric == "pr_auc" else val_metrics_default.roc_auc,
+                "calibration_loss": calibration_loss,
             }
         )
 
@@ -173,24 +209,45 @@ def main() -> None:
             f"train_loss={train_metrics.loss:.4f} train_auc={train_metrics.roc_auc:.4f} "
             f"val_loss={val_metrics_default.loss:.4f} val_auc={val_metrics_default.roc_auc:.4f} "
             f"val_pr_auc={val_metrics_default.pr_auc:.4f} "
+            f"temperature={temperature:.2f} "
             f"best_threshold={threshold:.2f}"
         )
 
-        if val_metrics_default.roc_auc > best_val_auc:
+        selection_score = val_metrics_default.pr_auc if args.selection_metric == "pr_auc" else val_metrics_default.roc_auc
+        if selection_score > best_selection_score:
+            best_selection_score = selection_score
             best_val_auc = val_metrics_default.roc_auc
             best_val_metrics = val_metrics_tuned
             best_threshold = threshold
+            best_temperature = temperature
+            best_epoch = epoch
+            epochs_without_improvement = 0
             torch.save(model.state_dict(), args.model_path)
+        else:
+            epochs_without_improvement += 1
+
+        if (
+            args.early_stopping_patience > 0
+            and epoch < args.epochs
+            and (selection_score + args.early_stopping_min_delta) <= best_selection_score
+            and epochs_without_improvement >= args.early_stopping_patience
+        ):
+            print(
+                f"early_stopping=triggered "
+                f"best_epoch={best_epoch} "
+                f"best_{args.selection_metric}={best_selection_score:.4f}"
+            )
+            break
 
     if best_val_metrics is None:
         raise RuntimeError("Training did not produce validation metrics.")
 
     model.load_state_dict(torch.load(args.model_path, map_location=device))
-    best_validation_metrics, val_targets, val_probabilities = predict_loader(
-        model, val_loader, criterion, device, threshold=best_threshold
+    best_validation_metrics, val_targets, val_probabilities, val_logits = predict_loader_logits(
+        model, val_loader, criterion, device, threshold=best_threshold, temperature=best_temperature
     )
-    test_metrics, test_targets, test_probabilities = predict_loader(
-        model, test_loader, criterion, device, threshold=best_threshold
+    test_metrics, test_targets, test_probabilities, test_logits = predict_loader_logits(
+        model, test_loader, criterion, device, threshold=best_threshold, temperature=best_temperature
     )
     validation_curves = build_curve_payload(val_targets, val_probabilities)
     test_curves = build_curve_payload(test_targets, test_probabilities)
@@ -221,11 +278,21 @@ def main() -> None:
             "train_fraction": args.train_fraction,
             "test_fraction": args.test_fraction,
             "balance_strategy": args.balance_strategy,
+            "positive_only_augmentation": args.positive_only_augmentation,
+            "augmentation_strength": args.augmentation_strength,
+            "sampler_positive_ratio": args.sampler_positive_ratio,
             "num_workers": args.num_workers,
             "seed": args.seed,
             "device": str(device),
             "pos_weight": pos_weight,
             "best_threshold": best_threshold,
+            "best_temperature": best_temperature,
+            "selection_metric": args.selection_metric,
+            "threshold_beta": args.threshold_beta,
+            "temperature_scaling": not args.disable_temperature_scaling,
+            "early_stopping_patience": args.early_stopping_patience,
+            "early_stopping_min_delta": args.early_stopping_min_delta,
+            "best_epoch": best_epoch,
             "model_path": str(args.model_path),
         },
         validation_curves=validation_curves,

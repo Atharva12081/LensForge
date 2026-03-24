@@ -217,11 +217,13 @@ Use `--test-fraction < 1.0` for quicker iteration during development, then switc
 ## Results snapshot
 
 - Test V best recorded run:
-  - validation ROC-AUC: `0.8864`
-  - validation PR-AUC: `0.3121`
-  - test ROC-AUC: `0.8828`
-  - test PR-AUC: `0.0969`
-  - test recall: `0.85`
+  - validation ROC-AUC: `0.9753`
+  - validation PR-AUC: `0.7043`
+  - test ROC-AUC: `0.9659`
+  - test PR-AUC: `0.3795`
+  - test precision: `0.4082`
+  - test recall: `0.5128`
+  - setup: focal loss on the full training split with PR-AUC checkpoint selection
 - Common Test I best recorded run:
   - validation accuracy: `0.6144`
   - validation macro ROC-AUC: `0.8333`
