@@ -235,9 +235,9 @@ Use `--test-fraction < 1.0` for quicker iteration during development, then switc
   - test recall: `0.5128`
   - setup: focal loss on the full training split with PR-AUC checkpoint selection
 - Common Test I best recorded run:
-  - validation accuracy: `0.6144`
-  - validation macro ROC-AUC: `0.8333`
-  - setup: explicit stratified `90:10` validation split with the polar-view CNN and no augmentation
+  - validation accuracy: `0.9141`
+  - validation macro ROC-AUC: `0.9849`
+  - setup: full combined train+val pool, explicit stratified `90:10` validation split, wider `width=32` polar-view CNN, no augmentation, cosine schedule
 - Optional Test IV spectral baseline:
   - validation accuracy: `0.3333`
   - validation macro ROC-AUC: `0.5245`
@@ -247,7 +247,7 @@ Artifact sources:
 - `reports/LENSFORGE_REPORT.md`
 - `reports/best_current_run.json`
 - `reports/common_test_i_summary.md`
-- `reports/common_test_i_polar_9010_noaug_long.json`
+- `reports/common_test_i_polar_9010_noaug_w32.json`
 - `reports/common_test_i_experiments_compact.md`
 - `reports/test_iv_spectral.json`
 - `reports/lsst_mock_pipeline_run.json`
@@ -255,7 +255,7 @@ Artifact sources:
 Interpretation:
 
 - Test V is the strongest part of LensForge because it is evaluated beyond ROC-AUC alone and retains useful precision-recall ranking quality on the provided imbalanced test set.
-- Common Test I is complete and reproducible, but it should be read as the weaker modeling result relative to Test V.
+- Common Test I is now a strong result in its own right rather than just a coverage artifact.
 - The LSST side strengthens the submission by showing a real data-interface story rather than only downstream model training.
 
 ## Mock LSST pipeline

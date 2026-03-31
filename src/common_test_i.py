@@ -38,6 +38,7 @@ class CommonTestIDataset(Dataset[tuple[Tensor, Tensor]]):
         polar_height: int = 80,
         polar_width: int = 96,
         cache_dir: Path | None = None,
+        repeat_channels: int = 1,
     ) -> None:
         self.items = items
         self.augment = augment
@@ -49,6 +50,7 @@ class CommonTestIDataset(Dataset[tuple[Tensor, Tensor]]):
         self.polar_height = polar_height
         self.polar_width = polar_width
         self.cache_dir = cache_dir
+        self.repeat_channels = repeat_channels
         if self.cache_dir is not None:
             self.cache_dir.mkdir(parents=True, exist_ok=True)
 
@@ -65,6 +67,8 @@ class CommonTestIDataset(Dataset[tuple[Tensor, Tensor]]):
             tensor = self._load_or_build_polar_view(path, tensor)
         if self.resize_to is not None:
             tensor = apply_resize(tensor, self.resize_to)
+        if self.repeat_channels > 1 and tensor.shape[0] == 1:
+            tensor = tensor.repeat(self.repeat_channels, 1, 1)
         tensor = apply_normalization(tensor, self.normalize_mode)
         if self.augment:
             if self.view_mode == "polar":
@@ -198,6 +202,13 @@ def apply_normalization(image: Tensor, mode: str) -> Tensor:
     if mode == "per_image_standardize":
         mean = image.mean()
         std = image.std().clamp_min(1e-6)
+        return (image - mean) / std
+    if mode == "imagenet":
+        mean = image.new_tensor([0.485, 0.456, 0.406]).view(-1, 1, 1)
+        std = image.new_tensor([0.229, 0.224, 0.225]).view(-1, 1, 1)
+        if image.shape[0] == 1:
+            mean = mean[:1]
+            std = std[:1]
         return (image - mean) / std
     return image
 
@@ -459,12 +470,36 @@ class SpectralClassifier(nn.Module):
 
 
 class ResNet18Classifier(nn.Module):
-    def __init__(self, num_classes: int = 3) -> None:
+    def __init__(self, num_classes: int = 3, input_channels: int = 1, pretrained: bool = False, dropout: float = 0.2) -> None:
         super().__init__()
         models = load_torchvision_models()
-        self.backbone = models.resnet18(weights=None)
-        self.backbone.conv1 = nn.Conv2d(1, 64, kernel_size=7, stride=2, padding=3, bias=False)
-        self.backbone.fc = nn.Linear(self.backbone.fc.in_features, num_classes)
+        weights = models.ResNet18_Weights.DEFAULT if pretrained else None
+        self.backbone = models.resnet18(weights=weights)
+        if input_channels != 3:
+            original = self.backbone.conv1
+            conv1 = nn.Conv2d(
+                input_channels,
+                original.out_channels,
+                kernel_size=original.kernel_size,
+                stride=original.stride,
+                padding=original.padding,
+                bias=False,
+            )
+            with torch.no_grad():
+                if pretrained:
+                    base_weight = original.weight.detach()
+                    if input_channels == 1:
+                        conv1.weight.copy_(base_weight.mean(dim=1, keepdim=True))
+                    else:
+                        conv1.weight.copy_(base_weight.mean(dim=1, keepdim=True).repeat(1, input_channels, 1, 1))
+                else:
+                    nn.init.kaiming_normal_(conv1.weight, mode="fan_out", nonlinearity="relu")
+            self.backbone.conv1 = conv1
+        in_features = self.backbone.fc.in_features
+        self.backbone.fc = nn.Sequential(
+            nn.Dropout(dropout),
+            nn.Linear(in_features, num_classes),
+        )
 
     def forward(self, x: Tensor) -> Tensor:
         return self.backbone(x)

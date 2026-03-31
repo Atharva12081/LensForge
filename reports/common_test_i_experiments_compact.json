@@ -1,5 +1,12 @@
 [
   {
+    "report": "common_test_i_polar_9010_noaug_w32.json",
+    "family": "neural",
+    "model": "polar_cnn_9010_noaug_w32",
+    "val_accuracy": 0.9141333333333334,
+    "val_macro_roc_auc": 0.9849469866666668
+  },
+  {
     "report": "common_test_i_polar_9010_noaug_long.json",
     "family": "neural",
     "model": "polar_cnn_9010_noaug_long",

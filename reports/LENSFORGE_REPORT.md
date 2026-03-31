@@ -31,9 +31,9 @@ It also now includes one optional optimization drawn directly from the task shee
 - notebook: `output/jupyter-notebook/common-test-i-multiclass.ipynb`
 
 Best retained validation result:
-- accuracy: `0.6144`
-- macro ROC-AUC: `0.8333`
-- evaluation setup: explicit stratified `90:10` validation split with the polar-view CNN and no augmentation
+- accuracy: `0.9141`
+- macro ROC-AUC: `0.9849`
+- evaluation setup: full combined train+val pool, explicit stratified `90:10` validation split, wider `width=32` polar-view CNN, no augmentation, cosine schedule
 
 ### Optional Test IV Neural Operator Extension
 
@@ -127,7 +127,7 @@ This makes the submission more than a model-only answer.
 
 - the raw benchmark datasets are not committed, so full reruns require local placement of the challenge data
 - the Rubin live-access notebook still depends on external credentials and environment-specific Rubin packages
-- Common Test I is complete and documented, but its performance is not as strong as the Test V result
+- Common Test I is now much stronger than the earlier retained baseline, but its validation-only reporting still makes Test V the more directly deployment-like benchmark in the repository
 
 ## Overall Assessment
 

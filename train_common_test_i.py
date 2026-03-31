@@ -43,15 +43,20 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--width", type=int, default=16)
     parser.add_argument("--center-crop", type=int, default=0)
     parser.add_argument("--resize-to", type=int, default=0)
-    parser.add_argument("--normalize-mode", choices=["none", "per_image_standardize"], default="none")
+    parser.add_argument("--normalize-mode", choices=["none", "per_image_standardize", "imagenet"], default="none")
+    parser.add_argument("--repeat-channels", type=int, default=1)
     parser.add_argument("--view-mode", choices=["image", "polar"], default="image")
     parser.add_argument("--polar-radius", type=int, default=72)
     parser.add_argument("--polar-height", type=int, default=80)
     parser.add_argument("--polar-width", type=int, default=96)
     parser.add_argument("--cache-dir", type=Path, default=None)
     parser.add_argument("--label-smoothing", type=float, default=0.0)
+    parser.add_argument("--pretrained", action="store_true")
+    parser.add_argument("--dropout", type=float, default=0.2)
     parser.add_argument("--scheduler", choices=["none", "cosine"], default="none")
     parser.add_argument("--warmup-epochs", type=int, default=0)
+    parser.add_argument("--early-stopping-patience", type=int, default=0)
+    parser.add_argument("--early-stopping-min-delta", type=float, default=0.0)
     parser.add_argument("--disable-augment", action="store_true")
     parser.add_argument("--num-workers", type=int, default=0)
     parser.add_argument("--seed", type=int, default=42)
@@ -96,6 +101,7 @@ def main() -> None:
             polar_height=args.polar_height,
             polar_width=args.polar_width,
             cache_dir=args.cache_dir,
+            repeat_channels=args.repeat_channels,
         ),
         batch_size=args.batch_size,
         shuffle=True,
@@ -114,6 +120,7 @@ def main() -> None:
             polar_height=args.polar_height,
             polar_width=args.polar_width,
             cache_dir=args.cache_dir,
+            repeat_channels=args.repeat_channels,
         ),
         batch_size=args.batch_size,
         shuffle=False,
@@ -124,7 +131,11 @@ def main() -> None:
     if args.model_type == "spectral":
         model = SpectralClassifier(width=max(args.width, 24)).to(device)
     elif args.model_type == "resnet18":
-        model = ResNet18Classifier().to(device)
+        model = ResNet18Classifier(
+            input_channels=args.repeat_channels,
+            pretrained=args.pretrained,
+            dropout=args.dropout,
+        ).to(device)
     elif args.model_type == "polar":
         model = PolarClassifier(width=max(args.width, 24)).to(device)
     elif args.model_type == "residual":
@@ -162,6 +173,8 @@ def main() -> None:
 
     best_val_auc = float("-inf")
     best_val_metrics = None
+    best_epoch = 0
+    epochs_without_improvement = 0
     history: list[dict[str, object]] = []
 
     for epoch in range(1, args.epochs + 1):
@@ -189,12 +202,21 @@ def main() -> None:
             f"val_loss={val_metrics.loss:.4f} val_acc={val_metrics.accuracy:.4f} val_auc={val_metrics.macro_roc_auc:.4f} "
             f"lr={optimizer.param_groups[0]['lr']:.2e}"
         )
-        if val_metrics.macro_roc_auc > best_val_auc:
+        improvement = val_metrics.macro_roc_auc - best_val_auc
+        if improvement > 0.0:
             best_val_auc = val_metrics.macro_roc_auc
             best_val_metrics = val_metrics
+            best_epoch = epoch
             torch.save(model.state_dict(), args.model_path)
+        if improvement > args.early_stopping_min_delta:
+            epochs_without_improvement = 0
+        else:
+            epochs_without_improvement += 1
         if scheduler is not None:
             scheduler.step()
+        if args.early_stopping_patience > 0 and epochs_without_improvement >= args.early_stopping_patience:
+            print(f"early_stopping epoch={epoch} best_epoch={best_epoch} best_val_auc={best_val_auc:.4f}")
+            break
 
     if best_val_metrics is None:
         raise RuntimeError("No validation metrics recorded.")
@@ -217,19 +239,25 @@ def main() -> None:
             "center_crop": args.center_crop,
             "resize_to": args.resize_to,
             "normalize_mode": args.normalize_mode,
+            "repeat_channels": args.repeat_channels,
             "view_mode": args.view_mode,
             "polar_radius": args.polar_radius,
             "polar_height": args.polar_height,
             "polar_width": args.polar_width,
             "cache_dir": str(args.cache_dir) if args.cache_dir is not None else None,
             "label_smoothing": args.label_smoothing,
+            "pretrained": args.pretrained,
+            "dropout": args.dropout,
             "scheduler": args.scheduler,
             "warmup_epochs": args.warmup_epochs,
+            "early_stopping_patience": args.early_stopping_patience,
+            "early_stopping_min_delta": args.early_stopping_min_delta,
             "disable_augment": args.disable_augment,
             "num_workers": args.num_workers,
             "seed": args.seed,
             "device": str(device),
             "model_path": str(args.model_path),
+            "best_epoch": best_epoch,
         },
         history=history,
         validation_metrics=best_val_metrics,

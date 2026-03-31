@@ -44,9 +44,9 @@ This repository is organized as a mentor-facing GSoC 2026 DeepLense evaluation s
   - test recall: `0.5128`
   - selected baseline uses focal loss with PR-AUC-based model selection
 - Common Test I:
-  - best recorded validation accuracy: `0.6144`
-  - best recorded validation macro ROC-AUC: `0.8333`
-  - strongest retained run uses an explicit stratified `90:10` validation split with the polar-view CNN and no augmentation
+  - best recorded validation accuracy: `0.9141`
+  - best recorded validation macro ROC-AUC: `0.9849`
+  - strongest retained run uses the full combined train+val pool with a wider polar-view CNN, explicit stratified `90:10` validation split, no augmentation, and cosine scheduling
 - Optional Test IV spectral baseline:
   - validation accuracy: `0.3333`
   - validation macro ROC-AUC: `0.5245`
@@ -63,4 +63,4 @@ The repository is organized around three reviewer-visible outcomes:
 
 - For Test V, the most important metric to notice is not only ROC-AUC but also PR-AUC on the provided imbalanced test split.
 - For the project brief, the LSST/mock-pipeline artifact matters because it demonstrates the data-interface portion of the submission rather than only model training.
-- Common Test I is complete and reproducible, but it is not the strongest modeling result in the repository; Test V is.
+- Common Test I is now a strong retained result as well, though Test V remains the more directly deployment-like benchmark because it includes held-out test reporting under severe imbalance.
