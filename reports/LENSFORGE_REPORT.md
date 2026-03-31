@@ -96,8 +96,11 @@ Test V is where LensForge currently demonstrates the strongest modeling maturity
 
 - the class imbalance problem is handled explicitly
 - threshold selection is treated as part of evaluation, not ignored
-- the repo keeps error-analysis summaries instead of reporting ROC-AUC alone
+- the repo reports PR-AUC as well as ROC-AUC, which matters more than ROC-AUC alone in the rare-positive lens-finding setting
+- the repo keeps error-analysis summaries instead of reporting a single headline score
 - the saved checkpoint and notebook make the result easy to inspect
+
+This is the clearest place where LensForge is competitive as a submission: the final retained Test V run preserves meaningful ranking quality on the imbalanced provided test split instead of relying only on validation AUC.
 
 ## Why the LSST Component Matters
 
@@ -133,3 +136,10 @@ LensForge should be read as a complete, reviewer-friendly evaluation submission:
 - strongest on Test V and pipeline framing
 - honest about the current limits of Common Test I and live Rubin access
 - organized to make mentor review fast and low-friction
+
+If compared against model-only example submissions, the main LensForge advantage is not that every metric is the best in every task. It is that the repository combines:
+
+- a strong Test V result evaluated with imbalance-aware metrics
+- full task coverage including Common Test I
+- an upstream LSST-style packaging story
+- reviewer-friendly artifacts, documentation, and reproducibility structure

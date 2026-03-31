@@ -13,6 +13,12 @@ LensForge is built to answer the DeepLense evaluation in a reviewer-friendly way
 - Test V is implemented with the strongest retained modeling result in the repository
 - the LSST side is represented by both a runnable mock pipeline and a prepared Rubin DP0.2 access path
 
+Reviewer-facing strengths:
+
+- Test V is reported with `PR-AUC` as well as `ROC-AUC`, which is important under the strong class imbalance of the lens-finding task
+- the repository includes an actual upstream Rubin/LSST-style packaging workflow instead of only model notebooks
+- Common Test I is fully covered, while its current limits are stated honestly
+
 This repository includes:
 
 - the required Common Test I multi-class classification deliverable
@@ -76,6 +82,8 @@ LensForge combines three layers of evidence in one repository:
 1. evaluation notebooks and saved metrics for the required DeepLense tasks
 2. a stronger Test V implementation with imbalance-aware training and threshold tuning
 3. a credible Rubin/LSST pipeline story, from mock packaging today to prepared TAP/Butler adapter paths when the proper external environment is available
+
+The strongest competitive signal in the repository is Test V: the final retained run is not only high in ROC-AUC, but also materially better in PR-AUC on the unsampled provided test split, which is the more informative ranking metric for this rare-positive setting.
 
 ## Evaluation Scope
 
@@ -241,6 +249,12 @@ Artifact sources:
 - `reports/common_test_i_experiments_compact.md`
 - `reports/test_iv_spectral.json`
 - `reports/lsst_mock_pipeline_run.json`
+
+Interpretation:
+
+- Test V is the strongest part of LensForge because it is evaluated beyond ROC-AUC alone and retains useful precision-recall ranking quality on the provided imbalanced test set.
+- Common Test I is complete and reproducible, but it should be read as the weaker modeling result relative to Test V.
+- The LSST side strengthens the submission by showing a real data-interface story rather than only downstream model training.
 
 ## Mock LSST pipeline
 

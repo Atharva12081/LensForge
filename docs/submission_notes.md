@@ -57,3 +57,9 @@ The repository is organized around three reviewer-visible outcomes:
 - a strong, fully documented Test V lens-finding baseline
 - a complete Common Test I baseline with retained reference results
 - a runnable mock-survey LSST pipeline that connects into the downstream DeepLense workflow
+
+## Reviewer Emphasis
+
+- For Test V, the most important metric to notice is not only ROC-AUC but also PR-AUC on the provided imbalanced test split.
+- For the project brief, the LSST/mock-pipeline artifact matters because it demonstrates the data-interface portion of the submission rather than only model training.
+- Common Test I is complete and reproducible, but it is not the strongest modeling result in the repository; Test V is.
