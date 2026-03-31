@@ -22,6 +22,7 @@ It also now includes one optional optimization drawn directly from the task shee
 ### Common Test I
 
 - training entry point: `train_common_test_i.py`
+- reviewer summary: `reports/common_test_i_summary.md`
 - baseline families:
   - CNN baseline
   - polar-view CNN baseline

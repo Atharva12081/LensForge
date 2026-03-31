@@ -14,6 +14,7 @@ This repository is organized as a mentor-facing GSoC 2026 DeepLense evaluation s
 - Common Test I:
   - `output/jupyter-notebook/common-test-i-multiclass.ipynb`
   - `train_common_test_i.py`
+  - `reports/common_test_i_summary.md`
   - `reports/common_test_i_experiments_compact.md`
 - Optional Test IV extension:
   - `output/jupyter-notebook/test-iv-neural-operator.ipynb`

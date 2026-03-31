@@ -115,6 +115,7 @@ Each sample is a normalized NumPy array with shape `(3, 64, 64)`.
 - `requirements.txt`: Python dependency list
 - `reports/`: curated experiment summaries and key JSON metrics
 - `reports/LENSFORGE_REPORT.md`: consolidated reviewer-grade summary of the full submission
+- `reports/common_test_i_summary.md`: short reviewer-facing summary of the retained Common Test I result and rationale
 - `reports/lsst_mock_pipeline_summary.md`: compact end-to-end summary of the pipeline handoff into Test V
 - `reports/focal_loss_summary.md`: direct BCE vs focal-loss comparison notes
 - `train_common_test_i.py`: multiclass baseline trainer for Common Test I
@@ -245,6 +246,7 @@ Artifact sources:
 
 - `reports/LENSFORGE_REPORT.md`
 - `reports/best_current_run.json`
+- `reports/common_test_i_summary.md`
 - `reports/common_test_i_polar_9010_noaug_long.json`
 - `reports/common_test_i_experiments_compact.md`
 - `reports/test_iv_spectral.json`
